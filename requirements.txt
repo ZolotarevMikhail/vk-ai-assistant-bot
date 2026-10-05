@@ -1,0 +1,5 @@
+aiohttp
+certifi
+loguru
+python-dotenv
+vkbottle
