@@ -14,7 +14,10 @@ from vkbottle.http import AiohttpClient
 
 from ai import ask_ai
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+)
 logger = logging.getLogger("smart-service-bot")
 
 load_dotenv()  # .env рядом с ботом

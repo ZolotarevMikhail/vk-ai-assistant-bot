@@ -29,7 +29,10 @@ def _system_prompt() -> str:
     if PROMPT_FILE.exists():
         return PROMPT_FILE.read_text(encoding="utf-8")
     # запасной вариант, если файл с персоной удалили
-    return "Ты — вежливый ассистент сообщества ВКонтакте. Отвечай по-русски, коротко и по делу."
+    return (
+        "Ты — вежливый ассистент сообщества ВКонтакте."
+        " Отвечай по-русски, коротко и по делу."
+    )
 
 
 def _load_key() -> str:
@@ -47,7 +50,10 @@ async def ask_ai(peer_id: int, text: str) -> str:
         + list(history)
         + [{"role": "user", "content": text}]
     )
-    payload = {"model": os.environ.get("AI_MODEL", DEFAULT_MODEL), "messages": messages}
+    payload = {
+        "model": os.environ.get("AI_MODEL", DEFAULT_MODEL),
+        "messages": messages,
+    }
 
     # две попытки на случай сбоя сети или лимита; бесконечных повторов нет
     last_error = None
@@ -57,16 +63,21 @@ async def ask_ai(peer_id: int, text: str) -> str:
             history.append({"role": "user", "content": text})
             history.append({"role": "assistant", "content": reply})
             return reply
-        except Exception as e:  # noqa: BLE001 — при любом сбое честный откат, не падение бота
+        # noqa: BLE001 — при любом сбое честный откат, не падение бота
+        except Exception as e:
             last_error = e
             logger.warning("Попытка %s не удалась: %s", attempt, e)
             await asyncio.sleep(2 * attempt)
     logger.error("ИИ не ответил: %s", last_error)
-    return "Сейчас техническая неполадка, ответ не пришёл. Напишите ещё раз или позже."
+    return (  # noqa: E501 — текст сообщения, менять нельзя
+        "Сейчас техническая неполадка, ответ не пришёл."
+        " Напишите ещё раз или позже."
+    )
 
 
 async def _request(payload: dict) -> str:
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=_ssl_context)) as session:
+    connector = aiohttp.TCPConnector(ssl=_ssl_context)
+    async with aiohttp.ClientSession(connector=connector) as session:
         async with session.post(
             API_URL,
             headers={"Authorization": "Bearer " + _load_key()},
@@ -76,5 +87,7 @@ async def _request(payload: dict) -> str:
             raw = await r.text()
     data = json.loads(raw)
     if "error" in data:
-        raise RuntimeError("ProxyAPI вернул ошибку: " + data["error"].get("message", ""))
+        raise RuntimeError(  # noqa: E501 — текст сообщения, менять нельзя
+            "ProxyAPI вернул ошибку: " + data["error"].get("message", "")
+        )
     return data["choices"][0]["message"]["content"]
